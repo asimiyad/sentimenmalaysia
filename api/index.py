@@ -3,7 +3,7 @@ import re
 import logging
 from pathlib import Path
 
-import httpx
+from huggingface_hub import InferenceClient
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -19,31 +19,15 @@ DASHBOARD_HTML = Path(__file__).parent.parent / "dashboard.html"
 def analyze_with_hf(text: str) -> dict:
     if not HF_TOKEN:
         raise RuntimeError("HF_TOKEN environment variable not set")
-
-    resp = httpx.post(
-        f"https://api-inference.huggingface.co/models/{HF_MODEL_ID}",
-        headers={"Authorization": f"Bearer {HF_TOKEN}"},
-        json={"inputs": text},
-        timeout=60,
-    )
-
-    if resp.status_code == 503:
-        raise RuntimeError(
-            "Model is loading on Hugging Face, please try again in 10 seconds"
-        )
-
-    resp.raise_for_status()
-
-    result = resp.json()
-    if isinstance(result, list) and len(result) > 0:
-        result = result[0]
-    if isinstance(result, list) and len(result) > 0:
-        result = max(result, key=lambda x: x["score"])
-
-    if not isinstance(result, dict) or "label" not in result:
-        raise RuntimeError(f"Unexpected response from HF API: {resp.text[:300]}")
-
-    return result
+    client = InferenceClient(token=HF_TOKEN)
+    results = client.text_classification(text, model=HF_MODEL_ID)
+    if not results:
+        raise RuntimeError("HF API returned empty result")
+    results = results if isinstance(results, list) else [results]
+    best = max(results, key=lambda x: x.score if hasattr(x, "score") else x["score"])
+    label = best.label if hasattr(best, "label") else best["label"]
+    score = best.score if hasattr(best, "score") else best["score"]
+    return {"label": label, "score": score}
 
 app = FastAPI(title="SentimenMalaysia API", version="1.0.0")
 app.add_middleware(
