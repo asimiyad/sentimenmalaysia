@@ -19,18 +19,30 @@ DASHBOARD_HTML = Path(__file__).parent.parent / "dashboard.html"
 def analyze_with_hf(text: str) -> dict:
     if not HF_TOKEN:
         raise RuntimeError("HF_TOKEN environment variable not set")
+
     resp = httpx.post(
         f"https://api-inference.huggingface.co/models/{HF_MODEL_ID}",
         headers={"Authorization": f"Bearer {HF_TOKEN}"},
         json={"inputs": text},
-        timeout=30,
+        timeout=60,
     )
+
+    if resp.status_code == 503:
+        raise RuntimeError(
+            "Model is loading on Hugging Face, please try again in 10 seconds"
+        )
+
     resp.raise_for_status()
+
     result = resp.json()
-    if isinstance(result, list):
+    if isinstance(result, list) and len(result) > 0:
         result = result[0]
-    if isinstance(result, list):
+    if isinstance(result, list) and len(result) > 0:
         result = max(result, key=lambda x: x["score"])
+
+    if not isinstance(result, dict) or "label" not in result:
+        raise RuntimeError(f"Unexpected response from HF API: {resp.text[:300]}")
+
     return result
 
 app = FastAPI(title="SentimenMalaysia API", version="1.0.0")
@@ -231,7 +243,17 @@ async def analyze(request: Request):
     if not text:
         return JSONResponse({"error": "No text provided"}, status_code=400)
 
-    result = analyze_with_hf(text)
+    try:
+        result = analyze_with_hf(text)
+    except RuntimeError as e:
+        logger.error("HF API error: %s", e)
+        return JSONResponse({"error": str(e)}, status_code=502)
+    except Exception as e:
+        logger.exception("HF API call failed unexpectedly")
+        return JSONResponse(
+            {"error": f"Inference failed: {str(e)}"}, status_code=502
+        )
+
     label_str = result.get("label", "NEUTRAL")
     score = result.get("score", 0.0)
 
