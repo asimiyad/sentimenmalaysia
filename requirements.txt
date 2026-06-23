@@ -1,0 +1,4 @@
+fastapi>=0.115.0
+transformers>=4.46.0
+torch>=2.5.1
+pydantic>=2.9.2

@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SentimenMalaysia — Malaysian News Sentiment Analysis</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700&amp;family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "inverse-primary": "#596151",
+                        "on-error": "#690005",
+                        "primary-container": "#353d2f",
+                        "error": "#ffb4ab",
+                        "surface-container-lowest": "#0c0f0d",
+                        "on-secondary-fixed": "#1a1d00",
+                        "tertiary": "#dcbddc",
+                        "surface-container-high": "#282b29",
+                        "surface-variant": "#333534",
+                        "surface-container-highest": "#333534",
+                        "on-surface": "#e2e3e0",
+                        "on-tertiary-fixed-variant": "#563f59",
+                        "outline-variant": "#454841",
+                        "surface-dim": "#111413",
+                        "outline": "#8f928a",
+                        "on-primary-container": "#9fa895",
+                        "background": "#111413",
+                        "secondary-container": "#484c26",
+                        "secondary-fixed-dim": "#c6ca99",
+                        "primary-fixed": "#dde6d2",
+                        "error-container": "#93000a",
+                        "inverse-surface": "#e2e3e0",
+                        "surface-bright": "#373a38",
+                        "surface-container-low": "#191c1b",
+                        "on-background": "#e2e3e0",
+                        "tertiary-container": "#49334c",
+                        "on-primary-fixed": "#161e11",
+                        "on-primary-fixed-variant": "#41493b",
+                        "on-error-container": "#ffdad6",
+                        "on-tertiary-fixed": "#28142b",
+                        "on-secondary": "#2f330f",
+                        "surface": "#111413",
+                        "on-secondary-fixed-variant": "#464924",
+                        "on-tertiary": "#3f2941",
+                        "tertiary-fixed-dim": "#dcbddc",
+                        "primary-fixed-dim": "#c1c9b6",
+                        "inverse-on-surface": "#2e312f",
+                        "on-tertiary-container": "#b99bba",
+                        "secondary": "#c6ca99",
+                        "on-primary": "#2b3325",
+                        "on-secondary-container": "#b8bc8c",
+                        "primary": "#c1c9b6",
+                        "surface-container": "#1e201f",
+                        "on-surface-variant": "#c5c7bf",
+                        "surface-tint": "#c1c9b6",
+                        "secondary-fixed": "#e3e6b3",
+                        "tertiary-fixed": "#f9d8f9"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "unit": "4px",
+                        "container-max": "1440px",
+                        "margin-desktop": "40px",
+                        "margin-mobile": "16px",
+                        "gutter": "24px"
+                    },
+                    "fontFamily": {
+                        "body-md": ["Inter"],
+                        "headline-md": ["Hanken Grotesk"],
+                        "headline-lg": ["Hanken Grotesk"],
+                        "label-sm": ["JetBrains Mono"],
+                        "body-sm": ["Inter"],
+                        "headline-xl": ["Hanken Grotesk"],
+                        "label-md": ["JetBrains Mono"],
+                        "body-lg": ["Inter"],
+                        "headline-lg-mobile": ["Hanken Grotesk"]
+                    },
+                    "fontSize": {
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "label-sm": ["12px", { "lineHeight": "14px", "letterSpacing": "0.05em", "fontWeight": "500" }],
+                        "body-sm": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "headline-xl": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "label-md": ["14px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                        "headline-lg-mobile": ["28px", { "lineHeight": "36px", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .material-symbols-outlined[data-weight="fill"] {
+            font-variation-settings: 'FILL' 1;
+        }
+        
+        /* Custom Scrollbar for Textarea */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: theme('colors.surface-container'); 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: theme('colors.outline-variant'); 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: theme('colors.outline'); 
+        }
+
+        /* SVG Circle Animation */
+        .progress-ring__circle {
+            transition: stroke-dashoffset 1s ease-in-out;
+            transform: rotate(-90deg);
+            transform-origin: 50% 50%;
+        }
+        
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 0 0px theme('colors.secondary/0'); }
+            50% { box-shadow: 0 0 0 4px theme('colors.secondary/20'); }
+        }
+        .animate-pulse-glow {
+            animation: pulse-glow 2s infinite;
+        }
+        
+        /* Skeleton Loader Animation */
+        @keyframes shimmer {
+            0% { background-position: -1000px 0; }
+            100% { background-position: 1000px 0; }
+        }
+        .skeleton {
+            background: linear-gradient(90deg, theme('colors.surface-container') 25%, theme('colors.surface-variant') 50%, theme('colors.surface-container') 75%);
+            background-size: 1000px 100%;
+            animation: shimmer 2s infinite linear;
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface min-h-screen flex flex-col font-body-md overflow-x-hidden selection:bg-secondary/30 selection:text-secondary-fixed">
+<!-- TopNavBar Component -->
+<header class="bg-surface dark:bg-surface border-b border-outline-variant/15 w-full z-50 fixed top-0 left-0">
+<div class="flex justify-between items-center px-margin-mobile md:px-margin-desktop h-16 w-full max-w-container-max mx-auto">
+<!-- Brand -->
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary text-[28px]" data-weight="fill">neurology</span>
+                    <span class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed-dim tracking-tight">SentimenMalaysia</span>
+</div>
+<!-- Desktop Navigation -->
+<nav class="hidden md:flex items-center gap-8">
+<a class="text-primary dark:text-primary-fixed-dim border-b-2 border-primary py-5 font-body-md text-body-md active:scale-95 transition-transform font-medium" href="#">Dashboard</a>
+<a class="text-on-surface-variant dark:text-on-surface-variant hover:text-primary dark:hover:text-primary-fixed-dim transition-colors py-5 font-body-md text-body-md active:scale-95 font-medium" href="#">History</a>
+<a class="text-on-surface-variant dark:text-on-surface-variant hover:text-primary dark:hover:text-primary-fixed-dim transition-colors py-5 font-body-md text-body-md active:scale-95 font-medium" href="#">API Docs</a>
+</nav>
+<!-- Trailing Actions -->
+<div class="flex items-center gap-4">
+<button class="text-on-surface-variant hover:text-primary transition-colors p-2 rounded-full hover:bg-surface-variant/50 hidden md:block">
+<span class="material-symbols-outlined">settings</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary transition-colors p-2 rounded-full hover:bg-surface-variant/50">
+<span class="material-symbols-outlined">help</span>
+</button>
+<div class="h-8 w-8 rounded-full bg-surface-variant border border-outline-variant flex items-center justify-center overflow-hidden cursor-pointer hover:border-outline transition-colors">
+<img alt="User avatar" class="object-cover w-full h-full" data-alt="A small, professional headshot of an individual, serving as a user profile avatar. The portrait should have clinical, neutral lighting against a dark, minimalist background. The style is sharp, clean, and modern." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCzQQwhFP04WXe0yE8_d7wKmdk7A8Bn6HuxOG6HGRozqQq7XRA2RAdn3xArZVpv1sWGXGFxhx2tr0XWaFhD5IQckZXmtCdQW10fRDyABIo3Ne44pUJ-OHv62EguOBr-PS55eOVlPVflCYinExFFPNjm518CZKShK0Fg6QuZazedOMvLTbLvgrsWnN_E0A2oJ4wrDLlR9W2bgELP968cW-qzyOz6Vm_rNL6A-RQAKkrrptMY89P8DAHtZ8QowQa5ycCaZ87XJS3r50U"/>
+</div>
+</div>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-grow flex flex-col items-center justify-start pt-24 pb-12 px-margin-mobile md:px-margin-desktop w-full max-w-[1000px] mx-auto relative">
+<!-- Ambient Background Glow -->
+<div class="absolute top-20 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-primary-container/10 blur-[120px] rounded-full pointer-events-none -z-10"></div>
+<!-- Input Section (Landing View) -->
+<div class="w-full flex flex-col items-center mt-12 transition-all duration-500 ease-in-out opacity-100 transform translate-y-0" id="input-section">
+<div class="text-center mb-10 max-w-2xl">
+<h1 class="font-headline-xl text-headline-lg-mobile md:text-headline-xl font-bold mb-4 text-on-surface">Malaysian News Sentiment</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant">Real-time sentiment classification for Malaysian news headlines using a fine-tuned DistilBERT model.</p>
+</div>
+<div class="w-full bg-surface-container border border-outline-variant/30 rounded-xl p-1 relative shadow-sm group focus-within:border-primary/50 transition-colors">
+<!-- Textarea -->
+<textarea class="w-full bg-surface-container text-on-surface font-body-md text-body-md p-5 rounded-lg border-none focus:ring-0 resize-none h-40 placeholder:text-on-surface-variant/50 focus:outline-none" id="text-input" placeholder="Paste a Malaysian news headline or article to analyze its sentiment..."></textarea>
+<!-- Input Action Bar -->
+<div class="flex justify-between items-center p-3 border-t border-outline-variant/15 mt-2 bg-surface-container-high rounded-b-lg">
+<div class="flex gap-2">
+<button class="p-2 text-on-surface-variant hover:text-on-surface hover:bg-surface-variant rounded-md transition-colors" title="Upload Document">
+<span class="material-symbols-outlined text-[20px]">upload_file</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:text-on-surface hover:bg-surface-variant rounded-md transition-colors" onclick="document.getElementById('text-input').value = ''" title="Clear Text">
+<span class="material-symbols-outlined text-[20px]">delete_sweep</span>
+</button>
+</div>
+<button class="bg-secondary text-on-secondary font-label-md text-label-md px-6 py-2.5 rounded-md hover:bg-secondary-fixed transition-colors flex items-center gap-2 shadow-[0_0_0_1px_rgba(170,174,127,0.1)] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100" id="analyze-btn">
+<span class="material-symbols-outlined text-[18px]">psychiatry</span>
+                        Analyze Sentiment
+                    </button>
+</div>
+</div>
+<!-- Sample Prompts -->
+<div class="mt-6 flex flex-wrap justify-center gap-3 w-full max-w-3xl">
+<span class="text-label-sm font-label-sm text-on-surface-variant uppercase tracking-wider py-1.5 px-2">Sample Inputs:</span>
+<button class="text-label-sm font-label-sm bg-surface-container border border-outline-variant/30 px-3 py-1.5 rounded-full text-on-surface-variant hover:text-on-surface hover:border-outline-variant transition-colors" onclick="fillSample(1)"><span class="text-teal-400">[POSITIVE]</span> Ringgit strengthens against USD, hits 5-year high</button>
+<button class="text-label-sm font-label-sm bg-surface-container border border-outline-variant/30 px-3 py-1.5 rounded-full text-on-surface-variant hover:text-on-surface hover:border-outline-variant transition-colors" onclick="fillSample(2)"><span class="text-rose-400">[NEGATIVE]</span> Floods displace thousands in Kuala Lumpur</button>
+<button class="text-label-sm font-label-sm bg-surface-container border border-outline-variant/30 px-3 py-1.5 rounded-full text-on-surface-variant hover:text-on-surface hover:border-outline-variant transition-colors" onclick="fillSample(3)"><span class="text-slate-400">[NEUTRAL]</span> Government announces new digital economy policy</button>
+</div>
+</div>
+<!-- Processing State (Hidden by default) -->
+<div class="w-full hidden flex-col items-center mt-20 transition-all duration-500 ease-in-out opacity-0 transform translate-y-4" id="processing-section">
+<div class="relative w-24 h-24 mb-8">
+<!-- Outer spinning rings -->
+<svg class="absolute inset-0 w-full h-full animate-spin" style="animation-duration: 3s;" viewbox="0 0 100 100">
+<circle class="text-outline-variant/30" cx="50" cy="50" fill="none" r="45" stroke="currentColor" stroke-dasharray="283" stroke-dashoffset="100" stroke-width="2"></circle>
+</svg>
+<svg class="absolute inset-0 w-full h-full animate-spin" style="animation-duration: 2s; animation-direction: reverse;" viewbox="0 0 100 100">
+<circle class="text-primary/40" cx="50" cy="50" fill="none" r="35" stroke="currentColor" stroke-dasharray="220" stroke-dashoffset="150" stroke-width="2"></circle>
+</svg>
+<!-- Inner pulse -->
+<div class="absolute inset-0 m-auto w-12 h-12 bg-primary-container rounded-full flex items-center justify-center animate-pulse">
+<span class="material-symbols-outlined text-primary text-[24px]">troubleshoot</span>
+</div>
+</div>
+<h2 class="font-label-md text-label-md text-primary tracking-[0.2em] uppercase mb-2">Analyzing Sentiment Profile</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant animate-pulse">Evaluating with fine-tuned DistilBERT...</p>
+<!-- Skeleton Structure Preview -->
+<div class="w-full max-w-4xl mt-12 grid grid-cols-1 md:grid-cols-12 gap-gutter opacity-50">
+<div class="md:col-span-4 h-64 skeleton rounded-xl border border-outline-variant/15"></div>
+<div class="md:col-span-8 flex flex-col gap-6">
+<div class="h-24 skeleton rounded-xl border border-outline-variant/15"></div>
+<div class="h-32 skeleton rounded-xl border border-outline-variant/15"></div>
+</div>
+</div>
+</div>
+<!-- Results Display (Hidden by default) -->
+<div class="w-full hidden flex-col mt-8 transition-all duration-700 ease-in-out opacity-0 transform translate-y-8 max-w-container-max" id="results-section">
+<!-- Action Bar -->
+<div class="flex justify-between items-center mb-8 border-b border-outline-variant/15 pb-4">
+<h2 class="font-headline-md text-headline-md font-semibold text-on-surface">Sentiment Report</h2>
+<div class="flex gap-3">
+<button class="text-label-sm font-label-sm text-on-surface-variant hover:text-on-surface border border-outline-variant/30 px-4 py-2 rounded-md hover:bg-surface-variant/50 transition-colors flex items-center gap-2" onclick="resetView()">
+<span class="material-symbols-outlined text-[16px]">refresh</span>
+                        New Analysis
+                    </button>
+                    <button class="text-label-sm font-label-sm text-secondary border border-secondary/30 px-4 py-2 rounded-md hover:bg-secondary/10 transition-colors flex items-center gap-2" id="export-btn">
+<span class="material-symbols-outlined text-[16px]">download</span>
+                        Export JSON
+                    </button>
+</div>
+</div>
+<!-- Bento Grid Layout -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-gutter">
+<!-- Primary Sentiment Node (Col Span 4) -->
+<div class="md:col-span-4 bg-surface-container-high border border-outline-variant/15 rounded-xl p-6 flex flex-col relative overflow-hidden group">
+<!-- Top accent line -->
+<div class="absolute top-0 left-0 w-full h-1 bg-secondary"></div>
+<div class="flex justify-between items-start mb-6 z-10">
+<h3 class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">Sentiment Vector</h3>
+                    <span class="font-label-sm text-label-sm bg-surface text-on-surface-variant px-2 py-1 rounded border border-outline-variant/30" id="score-label">SCORE: --</span>
+</div>
+<div class="flex-grow flex flex-col items-center justify-center z-10">
+<!-- Custom SVG Circular Gauge -->
+<div class="relative w-40 h-40 mb-4">
+<svg class="w-full h-full" viewbox="0 0 120 120">
+<!-- Background Track -->
+<circle class="text-surface-container-lowest" cx="60" cy="60" fill="none" r="54" stroke="currentColor" stroke-width="8"></circle>
+<!-- Progress Track (Positive - Sage Green) -->
+<circle class="text-secondary progress-ring__circle" cx="60" cy="60" fill="none" id="sentiment-gauge" r="54" stroke="currentColor" stroke-dasharray="339.292" stroke-dashoffset="339.292" stroke-linecap="round" stroke-width="8"></circle>
+</svg>
+<!-- Inner Content -->
+<div class="absolute inset-0 flex flex-col items-center justify-center">
+                    <span class="font-headline-lg text-headline-lg font-bold text-on-surface" id="gauge-percent">--<span class="text-headline-md text-on-surface-variant">%</span></span>
+</div>
+</div>
+                <!-- Sentiment Chip -->
+                                    <div class="px-6 py-2 rounded-full font-label-md text-label-md flex items-center gap-2 animate-pulse-glow" id="sentiment-chip">
+                                        <div class="w-2 h-2 rounded-full" id="sentiment-chip-dot"></div>
+                                        <span id="sentiment-chip-text">--</span>
+                                    </div>
+</div>
+<!-- Atmospheric background graphic -->
+<div class="absolute -bottom-10 -right-10 opacity-[0.03] z-0 pointer-events-none group-hover:opacity-[0.05] transition-opacity duration-700">
+<span class="material-symbols-outlined text-[200px]" data-weight="fill">mood</span>
+</div>
+</div>
+<!-- Secondary Data Stack (Col Span 8) -->
+<div class="md:col-span-8 flex flex-col gap-gutter">
+<!-- Aspect-Based Sentiment Breakdown (Row 1) -->
+<div class="bg-surface-container border border-outline-variant/15 rounded-xl p-6">
+<div class="flex justify-between items-center mb-6">
+<h3 class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px]">account_tree</span>
+                                Topic Sentiment Breakdown
+                            </h3>
+</div>
+                        <div class="space-y-5" id="aspects-container">
+                                </div>
+</div>
+<!-- Lower Data Row (Split into two cards) -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-gutter">
+<!-- Entity Recognition -->
+<div class="bg-surface-container border border-outline-variant/15 rounded-xl p-5">
+<h3 class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest mb-4 flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px]">data_object</span>
+                                Entity Extraction
+                            </h3>
+                            <div class="flex flex-wrap gap-2" id="entities-container">
+                                </div>
+</div>
+<!-- Linguistic Markers / Emoji Detection -->
+<div class="bg-surface-container border border-outline-variant/15 rounded-xl p-5">
+<h3 class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest mb-4 flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px]">translate</span>
+                                Linguistic Signals
+                            </h3>
+                            <div class="flex items-center gap-4 h-full pb-4" id="signals-container">
+                                </div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Footer Component -->
+<footer class="bg-surface-container-low dark:bg-surface-container-low border-t border-outline-variant/15 w-full mt-auto">
+<div class="flex flex-col md:flex-row justify-between items-center py-8 px-margin-mobile md:px-margin-desktop w-full max-w-container-max mx-auto gap-4 md:gap-0">
+<div class="font-headline-sm text-headline-sm text-on-surface font-semibold">
+                © 2026 SentimenMalaysia — Malaysian News Sentiment Engine
+            </div>
+<nav class="flex gap-6">
+<a class="text-secondary dark:text-secondary-fixed-dim font-label-sm text-label-sm opacity-80 hover:opacity-100 transition-opacity" href="#">Privacy Policy</a>
+<a class="text-on-surface-variant font-label-sm text-label-sm opacity-80 hover:opacity-100 transition-opacity" href="#">Terms of Service</a>
+<a class="text-on-surface-variant font-label-sm text-label-sm opacity-80 hover:opacity-100 transition-opacity" href="#">Contact Support</a>
+</nav>
+</div>
+</footer>
+<!-- Logic Script -->
+<script>
+        const textInput = document.getElementById('text-input');
+        const analyzeBtn = document.getElementById('analyze-btn');
+        const inputSection = document.getElementById('input-section');
+        const processingSection = document.getElementById('processing-section');
+        const resultsSection = document.getElementById('results-section');
+        const sentimentGauge = document.getElementById('sentiment-gauge');
+
+        // Sample Prompts
+        const samples = {
+            1: "Ringgit strengthens against US dollar, hitting a 5-year high as economy recovers strongly.",
+            2: "Floods displace thousands in Kuala Lumpur, more rain expected over the weekend.",
+            3: "Government announces new digital economy policy to boost tech sector growth."
+        };
+
+        function fillSample(id) {
+            textInput.value = samples[id];
+            checkInput();
+        }
+
+        function checkInput() {
+            if (textInput.value.trim().length > 0) {
+                analyzeBtn.disabled = false;
+            } else {
+                analyzeBtn.disabled = true;
+            }
+        }
+
+        textInput.addEventListener('input', checkInput);
+        
+        // Initial check
+        checkInput();
+
+        const CIRCUMFERENCE = 339.292;
+
+        function getSentimentConfig(sentiment) {
+            const configs = {
+                positive: { color: '#5EEAD4', bg: 'bg-teal-500/10', border: 'border-teal-500/30', text: 'text-teal-400', dot: 'bg-teal-400', icon: 'mood', label: 'POSITIVE' },
+                negative: { color: '#FB7185', bg: 'bg-rose-500/10', border: 'border-rose-500/30', text: 'text-rose-400', dot: 'bg-rose-400', icon: 'mood_bad', label: 'NEGATIVE' },
+                neutral: { color: '#94A3B8', bg: 'bg-slate-500/10', border: 'border-slate-500/30', text: 'text-slate-400', dot: 'bg-slate-400', icon: 'sentiment_neutral', label: 'NEUTRAL' }
+            };
+            return configs[sentiment] || configs.neutral;
+        }
+
+        function animateGauge(percent) {
+            const offset = CIRCUMFERENCE - (percent / 100) * CIRCUMFERENCE;
+            setTimeout(() => { sentimentGauge.style.strokeDashoffset = String(offset); }, 300);
+        }
+
+        function renderAspects(aspects) {
+            const container = document.getElementById('aspects-container');
+            container.innerHTML = '';
+            if (!aspects || aspects.length === 0) {
+                container.innerHTML = '<div class="text-body-sm text-on-surface-variant text-center py-4">No aspect data available</div>';
+                return;
+            }
+            const colorMap = { positive: '#5EEAD4', negative: '#FB7185', neutral: '#94A3B8' };
+            const labelMap = { positive: 'POS', negative: 'NEG', neutral: 'NEU' };
+            aspects.forEach((a, i) => {
+                const delay = 0.5 + i * 0.2;
+                const c = colorMap[a.sentiment] || '#94A3B8';
+                const l = labelMap[a.sentiment] || 'NEU';
+                container.innerHTML += `
+                    <div>
+                        <div class="flex justify-between text-body-sm font-body-sm mb-2">
+                            <span class="text-on-surface font-medium">${a.aspect}</span>
+                            <span class="font-label-sm text-label-sm" style="color:${c}">${l} [${a.score}%]</span>
+                        </div>
+                        <div class="w-full h-2 bg-surface-container-highest rounded-full overflow-hidden">
+                            <div class="h-full rounded-full" style="width:0%;background:${c};transition:width 1.5s cubic-bezier(0.22,1,0.36,1) ${delay}s;"></div>
+                        </div>
+                    </div>`;
+            });
+            setTimeout(() => {
+                container.querySelectorAll('.h-full').forEach((bar, i) => {
+                    bar.style.width = aspects[i].score + '%';
+                });
+            }, 100);
+        }
+
+        function renderEntities(entities) {
+            const container = document.getElementById('entities-container');
+            container.innerHTML = '';
+            if (!entities || entities.length === 0) {
+                container.innerHTML = '<div class="text-body-sm text-on-surface-variant"><em>No entities detected</em></div>';
+                return;
+            }
+            entities.forEach(e => {
+                container.innerHTML += `
+                    <span class="px-3 py-1 bg-surface-container-high border border-outline-variant/30 rounded text-body-sm text-on-surface font-body-sm">
+                        <span class="text-outline-variant mr-1 font-label-sm">${e.label}</span> ${e.entity}
+                    </span>`;
+            });
+        }
+
+        function renderSignals(signals) {
+            const container = document.getElementById('signals-container');
+            container.innerHTML = '';
+            if (!signals || signals.length === 0) {
+                container.innerHTML = '<div class="text-body-sm text-on-surface-variant text-center w-full"><em>No linguistic signals detected</em></div>';
+                return;
+            }
+            const parts = [];
+            signals.forEach((s, i) => {
+                if (i > 0) {
+                    parts.push('<div class="w-px h-10 bg-outline-variant/30"></div>');
+                }
+                if (s.type === 'emoji') {
+                    parts.push(`
+                        <div class="flex-1 text-center">
+                            <div class="text-[32px] mb-1 leading-none opacity-80">${s.value}</div>
+                            <div class="font-label-sm text-label-sm text-on-surface-variant">${s.label}</div>
+                        </div>`);
+                } else if (s.type === 'pivot') {
+                    parts.push(`
+                        <div class="flex-1 text-center">
+                            <span class="font-body-md text-on-surface border border-outline-variant/30 px-2 rounded bg-surface">"${s.value}"</span>
+                            <div class="font-label-sm text-label-sm text-on-surface-variant mt-2">${s.label}</div>
+                        </div>`);
+                } else if (s.type === 'intensity') {
+                    parts.push(`
+                        <div class="flex-1 text-center">
+                            <div class="text-[28px] mb-1 leading-none opacity-80 font-bold">${s.value}</div>
+                            <div class="font-label-sm text-label-sm text-on-surface-variant">${s.label}</div>
+                        </div>`);
+                }
+            });
+            container.innerHTML = parts.join('');
+        }
+
+        analyzeBtn.addEventListener('click', async () => {
+            const text = textInput.value.trim();
+            if (!text) return;
+
+            // 1. Hide Input
+            inputSection.classList.remove('opacity-100', 'translate-y-0');
+            inputSection.classList.add('opacity-0', '-translate-y-4');
+            
+            setTimeout(() => {
+                inputSection.classList.add('hidden');
+                
+                // 2. Show Processing
+                processingSection.classList.remove('hidden');
+                void processingSection.offsetWidth;
+                processingSection.classList.remove('opacity-0', 'translate-y-4');
+                processingSection.classList.add('opacity-100', 'translate-y-0');
+            }, 500);
+
+            // 3. Real API call
+            try {
+                const response = await fetch('/analyze', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text })
+                });
+                if (!response.ok) throw new Error('API error: ' + response.status);
+                const data = await response.json();
+
+                // 4. Hide Processing / Show Results
+                processingSection.classList.remove('opacity-100', 'translate-y-0');
+                processingSection.classList.add('opacity-0', '-translate-y-4');
+                
+                setTimeout(() => {
+                    processingSection.classList.add('hidden');
+                    
+                    resultsSection.classList.remove('hidden');
+                    void resultsSection.offsetWidth;
+                    resultsSection.classList.remove('opacity-0', 'translate-y-8');
+                    resultsSection.classList.add('opacity-100', 'translate-y-0');
+
+                    // Populate
+                    const sent = data.sentiment.toLowerCase();
+                    const config = getSentimentConfig(sent);
+                    const percent = Math.round(data.confidence * 100);
+
+                    // Gauge
+                    document.getElementById('gauge-percent').innerHTML = `${percent}<span class="text-headline-md text-on-surface-variant">%</span>`;
+                    sentimentGauge.style.strokeDashoffset = String(CIRCUMFERENCE);
+                    sentimentGauge.style.color = config.color;
+                    animateGauge(percent);
+
+                    // Score label
+                    document.getElementById('score-label').textContent = `SCORE: ${data.confidence.toFixed(2)}`;
+
+                    // Chip
+                    const chip = document.getElementById('sentiment-chip');
+                    chip.className = `${config.bg} ${config.border} ${config.text} px-6 py-2 rounded-full font-label-md text-label-md flex items-center gap-2 animate-pulse-glow`;
+                    document.getElementById('sentiment-chip-dot').className = `w-2 h-2 rounded-full ${config.dot}`;
+                    document.getElementById('sentiment-chip-text').textContent = config.label;
+
+                    // Atmospheric icon
+                    const iconSpan = document.querySelector('.material-symbols-outlined.text-\\[200px\\]');
+                    if (iconSpan) iconSpan.textContent = config.icon;
+
+                    // Aspects
+                    renderAspects(data.aspects || []);
+
+                    // Entities
+                    renderEntities(data.entities || []);
+
+                    // Signals
+                    renderSignals(data.signals || []);
+
+                    // Export
+                    document.getElementById('export-btn').onclick = () => {
+                        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = 'sentiment_analysis.json';
+                        a.click();
+                        URL.revokeObjectURL(url);
+                    };
+                }, 500);
+            } catch (err) {
+                processingSection.classList.remove('opacity-100', 'translate-y-0');
+                processingSection.classList.add('opacity-0', '-translate-y-4');
+                setTimeout(() => {
+                    processingSection.classList.add('hidden');
+                    alert('Error: ' + err.message);
+                    resetView();
+                }, 500);
+            }
+        });
+
+        function resetView() {
+            sentimentGauge.style.strokeDashoffset = String(CIRCUMFERENCE);
+            
+            textInput.value = '';
+            checkInput();
+
+            resultsSection.classList.remove('opacity-100', 'translate-y-0');
+            resultsSection.classList.add('opacity-0', 'translate-y-8');
+            
+            setTimeout(() => {
+                resultsSection.classList.add('hidden');
+                
+                inputSection.classList.remove('hidden', '-translate-y-4');
+                void inputSection.offsetWidth;
+                inputSection.classList.remove('opacity-0');
+                inputSection.classList.add('opacity-100', 'translate-y-0');
+            }, 700);
+        }
+
+    </script>
+</body></html>
