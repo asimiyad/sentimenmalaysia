@@ -3,7 +3,7 @@ import re
 import logging
 from pathlib import Path
 
-from huggingface_hub import InferenceClient
+import requests
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -19,15 +19,25 @@ DASHBOARD_HTML = Path(__file__).parent.parent / "dashboard.html"
 def analyze_with_hf(text: str) -> dict:
     if not HF_TOKEN:
         raise RuntimeError("HF_TOKEN environment variable not set")
-    client = InferenceClient(token=HF_TOKEN)
-    results = client.text_classification(text, model=HF_MODEL_ID)
-    if not results:
-        raise RuntimeError("HF API returned empty result")
-    results = results if isinstance(results, list) else [results]
-    best = max(results, key=lambda x: x.score if hasattr(x, "score") else x["score"])
-    label = best.label if hasattr(best, "label") else best["label"]
-    score = best.score if hasattr(best, "score") else best["score"]
-    return {"label": label, "score": score}
+    resp = requests.post(
+        f"https://api-inference.huggingface.co/models/{HF_MODEL_ID}",
+        headers={"Authorization": f"Bearer {HF_TOKEN}"},
+        json={"inputs": text, "options": {"wait_for_model": True}},
+        timeout=120,
+    )
+    if resp.status_code == 503:
+        raise RuntimeError(
+            "Model is loading on Hugging Face, please try again in 10 seconds"
+        )
+    resp.raise_for_status()
+    result = resp.json()
+    if isinstance(result, list) and len(result) > 0:
+        result = result[0]
+    if isinstance(result, list) and len(result) > 0:
+        result = max(result, key=lambda x: x["score"])
+    if not isinstance(result, dict) or "label" not in result:
+        raise RuntimeError(f"Unexpected response: {resp.text[:300]}")
+    return result
 
 app = FastAPI(title="SentimenMalaysia API", version="1.0.0")
 app.add_middleware(
@@ -235,7 +245,8 @@ async def analyze(request: Request):
     except Exception as e:
         logger.exception("HF API call failed unexpectedly")
         return JSONResponse(
-            {"error": f"Inference failed: {str(e)}"}, status_code=502
+            {"error": f"Inference failed ({type(e).__name__}): {str(e)}"},
+            status_code=502,
         )
 
     label_str = result.get("label", "NEUTRAL")
