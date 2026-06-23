@@ -27,7 +27,11 @@ def analyze_with_hf(text: str) -> dict:
     )
     resp.raise_for_status()
     result = resp.json()
-    return result[0] if isinstance(result, list) else result
+    if isinstance(result, list):
+        result = result[0]
+    if isinstance(result, list):
+        result = max(result, key=lambda x: x["score"])
+    return result
 
 app = FastAPI(title="SentimenMalaysia API", version="1.0.0")
 app.add_middleware(
@@ -228,7 +232,7 @@ async def analyze(request: Request):
         return JSONResponse({"error": "No text provided"}, status_code=400)
 
     result = analyze_with_hf(text)
-    label_str = result.get("label", result.get("description", "NEUTRAL"))
+    label_str = result.get("label", "NEUTRAL")
     score = result.get("score", 0.0)
 
     if label_str.upper() == "LABEL_0" or label_str.lower() == "negative":
