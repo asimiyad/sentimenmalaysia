@@ -2,34 +2,34 @@ import os
 import re
 import logging
 from pathlib import Path
-from contextlib import asynccontextmanager
 
+import httpx
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-from transformers import pipeline
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger(__name__)
 
 HF_MODEL_ID = "1ASIM1/sentimenmalaysia-distilbert"
+HF_TOKEN = os.environ.get("HF_TOKEN")
 DASHBOARD_HTML = Path(__file__).parent.parent / "dashboard.html"
 
-classifier = None
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    global classifier
-    logger.info("Loading model from Hugging Face Hub: %s", HF_MODEL_ID)
-    classifier = pipeline(
-        "sentiment-analysis",
-        model=HF_MODEL_ID,
-        tokenizer=HF_MODEL_ID,
+def analyze_with_hf(text: str) -> dict:
+    if not HF_TOKEN:
+        raise RuntimeError("HF_TOKEN environment variable not set")
+    resp = httpx.post(
+        f"https://api-inference.huggingface.co/models/{HF_MODEL_ID}",
+        headers={"Authorization": f"Bearer {HF_TOKEN}"},
+        json={"inputs": text},
+        timeout=30,
     )
-    logger.info("Model loaded successfully")
-    yield
+    resp.raise_for_status()
+    result = resp.json()
+    return result[0] if isinstance(result, list) else result
 
-app = FastAPI(title="SentimenMalaysia API", version="1.0.0", lifespan=lifespan)
+app = FastAPI(title="SentimenMalaysia API", version="1.0.0")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -206,9 +206,6 @@ def extract_linguistic_signals(text: str) -> dict:
     }
 
 
-ID_TO_LABEL = {0: "negative", 1: "neutral", 2: "positive"}
-
-
 @app.get("/", response_class=HTMLResponse)
 async def index():
     if not DASHBOARD_HTML.exists():
@@ -219,7 +216,7 @@ async def index():
 
 @app.get("/health")
 async def health():
-    return {"status": "ok", "model_loaded": classifier is not None}
+    return {"status": "ok", "model": HF_MODEL_ID, "hf_token_set": HF_TOKEN is not None}
 
 
 @app.post("/analyze")
@@ -230,20 +227,18 @@ async def analyze(request: Request):
     if not text:
         return JSONResponse({"error": "No text provided"}, status_code=400)
 
-    if classifier is None:
-        return JSONResponse({"error": "Model not loaded"}, status_code=503)
+    result = analyze_with_hf(text)
+    label_str = result.get("label", result.get("description", "NEUTRAL"))
+    score = result.get("score", 0.0)
 
-    result = classifier(text)[0]
-    label_str = result["label"]
-    score = result["score"]
-
-    if label_str.startswith("LABEL_"):
-        label_num = int(label_str.split("_")[1])
-        sentiment = ID_TO_LABEL.get(label_num, "neutral")
+    if label_str.upper() == "LABEL_0" or label_str.lower() == "negative":
+        sentiment = "negative"
+    elif label_str.upper() == "LABEL_1" or label_str.lower() == "neutral":
+        sentiment = "neutral"
+    elif label_str.upper() == "LABEL_2" or label_str.lower() == "positive":
+        sentiment = "positive"
     else:
-        sentiment = label_str.lower()
-        if sentiment not in ID_TO_LABEL.values():
-            sentiment = "neutral"
+        sentiment = "neutral"
 
     aspects = extract_aspects(text)
     entities = extract_entities(text)
