@@ -501,7 +501,11 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ text })
                 });
-                if (!response.ok) throw new Error('API error: ' + response.status);
+                if (!response.ok) {
+                    let msg = 'API error: ' + response.status;
+                    try { const err = await response.json(); msg = err.error || msg; } catch(e) {}
+                    throw new Error(msg);
+                }
                 const data = await response.json();
 
                 // 4. Hide Processing / Show Results
